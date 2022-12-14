@@ -12,6 +12,8 @@ namespace ASP.NET_MVC_Core.tutorial
         public int Cols { get => field.GetLength(0); }
         public int Rows { get => field.GetLength(1); }
 
+        private object locker = new object();   
+
         public AutoResetEvent[] Handles { get => handles; }
 
         private char[,] field;
@@ -56,17 +58,20 @@ namespace ASP.NET_MVC_Core.tutorial
 
         public bool Plant(int x, int y, char seed)
         {
-            if (x < 0 || x >= field.GetLength(0) || y < 0 || y >= field.GetLength(1))
-                return false;
-            if (seed != 'X' && seed != '0')
-                return false;
-            if (field[x, y] == '.')
+            lock(locker)
             {
-                field[x, y] = seed;
-                return true;
-            }
-            else
-                return false;
+                if (x < 0 || x >= field.GetLength(0) || y < 0 || y >= field.GetLength(1))
+                    return false;
+                if (seed != 'X' && seed != '0')
+                    return false;
+                if (field[x, y] == '.')
+                {
+                    field[x, y] = seed;
+                    return true;
+                }
+                else
+                    return false;
+            }            
         }
     }
 }
