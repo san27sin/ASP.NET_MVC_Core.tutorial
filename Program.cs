@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ASP.NET_MVC_Core.tutorial
 {
@@ -11,13 +13,20 @@ namespace ASP.NET_MVC_Core.tutorial
         static void Main(string[] args)
         {
             Payment paymentFixed = new FixedPayment(5_000, 20);
-            paymentFixed.employers.Add(new Employer("Alex", "Sinitsyn"));
-            paymentFixed.employers.Add(new Employer("Pasha", "Kruglov"));
+
+            var employer = paymentFixed
+                .CreateEmployer()
+                .AddNameEmployer("Sasha")
+                .AddMiddleNameEmployer("Romanovish")
+                .AddSurnameEmployer("Sinitsyn")
+                .AddSalaryEmployer()
+                .EmployerJoinToGroup()
+                .GetEmployer();
+
+
             Console.WriteLine(paymentFixed.ToString());
 
             Payment paymentPerHour = new PerHourPayment(300);
-            paymentPerHour.employers.Add(new Employer("Kola", "Lisitsyn"));
-            paymentPerHour.employers.Add(new Employer("Masha", "Davasha"));
             Console.WriteLine(paymentPerHour.ToString());
 
             Console.ReadKey();
@@ -33,18 +42,17 @@ namespace ASP.NET_MVC_Core.tutorial
         public class Employer
         {
             public string Name { get; set; }
+            public string MiddleName { get; set; }
             public string Surname { get; set; }
-            public Employer(string name, string surname)
-            {
-                Name = name;
-                Surname = surname;
-            }
+            public double Salary { get; set; }
         }
 
         public abstract class Payment
         {
+            protected List<Employer> employers { get; } = new List<Employer>();
 
-            public List<Employer> employers { get; } = new List<Employer>();
+            protected Employer employer;
+
             public double Wage { get; }
             public Payment(double wage)
             {
@@ -53,14 +61,68 @@ namespace ASP.NET_MVC_Core.tutorial
 
             public abstract double CalculateMonthPayment();
 
+            public Payment CreateEmployer()
+            {
+                employer = new Employer();
+                return this;
+            }
+
+            public Payment AddNameEmployer(string Name)
+            {
+                if (employer != null && !String.IsNullOrEmpty(Name))
+                    employer.Name = Name;
+
+                return this;
+            }
+
+            public Payment AddMiddleNameEmployer(string MiddleName)
+            {
+                if (employer != null && !String.IsNullOrEmpty(MiddleName))
+                    employer.MiddleName = MiddleName;
+
+                return this;
+            }
+
+            public Payment AddSurnameEmployer(string Surname)
+            {
+                if (employer != null && !String.IsNullOrEmpty(Surname))
+                    employer.Surname = Surname;
+
+                return this;
+            }
+
+            public Payment AddSalaryEmployer()
+            {
+                if (employer != null)
+                    employer.Salary = CalculateMonthPayment();
+
+                return this;
+            }
+
+            public Payment EmployerJoinToGroup()
+            {
+                if (employer != null)
+                    employers.Add(employer);
+
+                return this;
+            }
+
+            public Employer GetEmployer()
+            {
+                if (employer == null)
+                    return null;
+
+                return employer;
+            }
+
             public override string ToString()
             {
                 if(employers.Count == 0)
-                    return String.Empty;
+                    return "Сотрудники не зарегистрированы!";
 
                 var sb = new StringBuilder();
                 foreach (var employer in employers)
-                    sb.Append($"{employer.Name} {employer.Surname} / получил среднемесячную зарплату {CalculateMonthPayment().ToString()} руб.\n");
+                    sb.Append($"{employer.Name} {employer.Surname} / получил среднемесячную зарплату {employer.Salary.ToString()} руб.\n");
                 return sb.ToString();
             }
         }
